@@ -44,13 +44,17 @@ jobs:
             ubuntu@${{ secrets.HOST }} \
             "sudo systemctl restart helloworld"
 
-      - name: Testar aplicação
+            - name: Testar aplicação
         run: |
           ssh -i /tmp/private_key \
             -o StrictHostKeyChecking=no \
             -o UserKnownHostsFile=/dev/null \
             ubuntu@${{ secrets.HOST }} \
             "curl -f http://127.0.0.1"
+
+      - name: Teste de erro
+        run: |
+          exit 1
 
       - name: Notificar sucesso no Discord
         if: success()
