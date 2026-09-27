@@ -1,0 +1,72 @@
+name: Publicação automática
+
+on:
+  push:
+    branches: ["main"]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+
+      - name: Baixar código do repositório
+        uses: actions/checkout@v4
+
+      - name: Criar arquivo temporário para a chave SSH
+        run: |
+          echo "${{ secrets.KEY }}" > /tmp/private_key
+          chmod 600 /tmp/private_key
+
+      - name: Fazer backup da aplicação atual
+        run: |
+          ssh -i /tmp/private_key \
+            -o StrictHostKeyChecking=no \
+            -o UserKnownHostsFile=/dev/null \
+            ubuntu@${{ secrets.HOST }} \
+            "mkdir -p /home/ubuntu/backups && \
+             tar -czf /home/ubuntu/backups/helloworld-\$(date +%Y%m%d-%H%M%S).tar.gz \
+             -C /home/ubuntu helloworld"
+
+      - name: Transferir aplicação
+        run: |
+          scp -i /tmp/private_key \
+            -o StrictHostKeyChecking=no \
+            -o UserKnownHostsFile=/dev/null \
+            app.py \
+            ubuntu@${{ secrets.HOST }}:/home/ubuntu/helloworld/app.py
+
+      - name: Reiniciar serviço da aplicação
+        run: |
+          ssh -i /tmp/private_key \
+            -o StrictHostKeyChecking=no \
+            -o UserKnownHostsFile=/dev/null \
+            ubuntu@${{ secrets.HOST }} \
+            "sudo systemctl restart helloworld"
+
+      - name: Testar aplicação
+        run: |
+          ssh -i /tmp/private_key \
+            -o StrictHostKeyChecking=no \
+            -o UserKnownHostsFile=/dev/null \
+            ubuntu@${{ secrets.HOST }} \
+            "curl -f http://127.0.0.1"
+
+      - name: Notificar sucesso no Discord
+        if: success()
+        run: |
+          curl -H "Content-Type: application/json" \
+            -d '{"content":"✅ Deploy realizado com sucesso! A aplicação HelloWorld foi atualizada na VM Oracle Cloud."}' \
+            "${{ secrets.DISCORD }}"
+
+      - name: Notificar erro no Discord
+        if: failure()
+        run: |
+          curl -H "Content-Type: application/json" \
+            -d '{"content":"❌ Falha no deploy! A publicação da aplicação HelloWorld apresentou um erro."}' \
+            "${{ secrets.DISCORD }}"
+
+      - name: Limpar chave privada
+        if: always()
+        run: |
+          rm -f /tmp/private_key
