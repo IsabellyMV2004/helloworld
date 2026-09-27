@@ -52,12 +52,6 @@ jobs:
             ubuntu@${{ secrets.HOST }} \
             "curl -f http://127.0.0.1"
 
-      # TESTE TEMPORÁRIO DE ERRO
-      - name: Teste de erro
-        run: |
-          echo "Provocando erro proposital para testar a notificação..."
-          exit 1
-
       - name: Notificar sucesso no Discord
         if: ${{ success() }}
         run: |
