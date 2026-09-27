@@ -44,7 +44,7 @@ jobs:
             ubuntu@${{ secrets.HOST }} \
             "sudo systemctl restart helloworld"
 
-            - name: Testar aplicação
+      - name: Testar aplicação
         run: |
           ssh -i /tmp/private_key \
             -o StrictHostKeyChecking=no \
@@ -52,25 +52,27 @@ jobs:
             ubuntu@${{ secrets.HOST }} \
             "curl -f http://127.0.0.1"
 
+      # TESTE TEMPORÁRIO DE ERRO
       - name: Teste de erro
         run: |
+          echo "Provocando erro proposital para testar a notificação..."
           exit 1
 
       - name: Notificar sucesso no Discord
-        if: success()
+        if: ${{ success() }}
         run: |
           curl -H "Content-Type: application/json" \
             -d '{"content":"✅ Deploy realizado com sucesso! A aplicação HelloWorld foi atualizada na VM Oracle Cloud."}' \
             "${{ secrets.DISCORD }}"
 
       - name: Notificar erro no Discord
-        if: failure()
+        if: ${{ failure() }}
         run: |
           curl -H "Content-Type: application/json" \
             -d '{"content":"❌ Falha no deploy! A publicação da aplicação HelloWorld apresentou um erro."}' \
             "${{ secrets.DISCORD }}"
 
       - name: Limpar chave privada
-        if: always()
+        if: ${{ always() }}
         run: |
           rm -f /tmp/private_key
