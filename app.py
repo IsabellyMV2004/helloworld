@@ -9,7 +9,7 @@ class HelloWorld(BaseHTTPRequestHandler):
         self.wfile.write(b"""
         <html>
             <head>
-                <title>Hello World</title>
+                <h1>Hello World - CI/CD!</h1>
             </head>
             <body>
                 <h1>Hello World!</h1>
